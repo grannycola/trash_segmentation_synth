@@ -53,6 +53,7 @@ class ApplyTransform(Dataset):
     
 class TacoDatasetSegmentation(Dataset):
     
+    # remake this because it overload CPU
     @staticmethod
     def minimal_transformations(input_shape):
         transform = [
@@ -85,24 +86,16 @@ class TacoDatasetSegmentation(Dataset):
         img_id = self.img_ids[index]
         img_info = self.coco_annotation.loadImgs(img_id)[0]
         
-        img_path = 'data/' + img_info["file_name"]
+        img_path = 'data/resized/' + img_info["file_name"]
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
-        # Get masks
-        ann_ids = self.coco_annotation.getAnnIds(imgIds=[img_id], iscrowd=None)
-        anns = self.coco_annotation.loadAnns(ann_ids)
-        mask = np.zeros((img_info['height'],img_info['width']))
-        
-        # Use supercategories instead classes
-        for ann in anns:
-            mask = np.maximum(mask, self.coco_annotation.annToMask(ann) * self.getSupercategory(ann['category_id']))
-            
+        # Get Mask
+        mask_filename = img_info["file_name"].replace('images/','').replace('.jpg', '.png')
+        path_to_mask = 'data/resized/masks/' + mask_filename
+        mask = cv2.imread(path_to_mask, cv2.IMREAD_GRAYSCALE)
         mask = np.expand_dims(mask, axis=2)
-        # Apply minimal_transforms
-        sample = self.minimal_transformations(self.input_size)(image=image, mask=mask)
-        image, mask = sample['image'], sample['mask']
-
+        
         return image, mask
 
     def __len__(self):
@@ -119,7 +112,7 @@ class TacoLoaders:
 
         return torch.utils.data.random_split(dataset, [train_size, test_size])
 
-    def __init__(self, preprocessing_fn, augmentation=None,
+    def __init__(self, preprocessing_fn, batch_size = 4, augmentation=None, resize_input=None,
                  train_size_perc=0.889):
 
         self.train_dataset = TacoDatasetSegmentation('data/annotations_0_train.json')
@@ -138,22 +131,22 @@ class TacoLoaders:
                                                 preprocessing_fn),
                                             )
         self.valid_dataset = ApplyTransform(self.valid_dataset,
-                                            augmentation=None,
+                                            augmentation=resize_input,
                                             preprocessing=get_preprocessing(
                                                 preprocessing_fn),
                                             )
         self.test_dataset = ApplyTransform(self.test_dataset,
-                                           augmentation=None,
+                                           augmentation=resize_input,
                                            preprocessing=get_preprocessing(
                                                preprocessing_fn),
                                            )
 
         self.train_loader = DataLoader(
-            self.train_dataset, batch_size=16, shuffle=True)
+            self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
         self.valid_loader = DataLoader(
-            self.valid_dataset, batch_size=16, shuffle=False)
+            self.valid_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
         self.test_loader = DataLoader(
-            self.test_dataset, batch_size=16, shuffle=False)
+            self.test_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 
     def show_example(self):
         n = np.random.choice(len(self.train_dataset))
