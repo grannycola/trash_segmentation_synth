@@ -88,11 +88,11 @@ class TacoDatasetSegmentation(Dataset):
         
         img_path = 'data/resized/' + img_info["file_name"]
         image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # Get Mask
         mask_filename = img_info["file_name"].replace('images/','').replace('.jpg', '.png')
-        path_to_mask = 'data/resized/masks/' + mask_filename
+        path_to_mask = 'data/resized/masks_2_classes/' + mask_filename
         mask = cv2.imread(path_to_mask, cv2.IMREAD_GRAYSCALE)
         mask = np.expand_dims(mask, axis=2)
         
@@ -113,14 +113,17 @@ class TacoLoaders:
         return torch.utils.data.random_split(dataset, [train_size, test_size])
 
     def __init__(self, preprocessing_fn, batch_size = 4, augmentation=None, resize_input=None,
-                 train_size_perc=0.889):
+                 train_size_perc=0.9):
 
-        self.train_dataset = TacoDatasetSegmentation('data/annotations_0_train.json')
-        self.valid_dataset = TacoDatasetSegmentation('data/annotations_0_val.json')
+        self.train_dataset = TacoDatasetSegmentation('data/annotations.json')
+        #self.test_dataset = TacoDatasetSegmentation('data/annotations_0_test.json')
         
         # Сначала сплитим данные, потом аугментации
-        self.train_dataset, self.test_dataset =TacoLoaders.train_test_split(self.train_dataset,
+        self.train_dataset, self.valid_dataset = TacoLoaders.train_test_split(self.train_dataset,
                                                                             train_size_perc=train_size_perc)
+        
+        self.train_dataset, self.test_dataset = TacoLoaders.train_test_split(self.train_dataset,
+                                                                            train_size_perc=0.889)
         
         print(len(self.train_dataset), len(self.valid_dataset), len(self.test_dataset))
         

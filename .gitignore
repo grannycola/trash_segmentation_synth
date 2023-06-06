@@ -1,2 +1,4 @@
 data/batch_*
 data/images/
+__pycache__/
+.ipynb_checkpoints/
