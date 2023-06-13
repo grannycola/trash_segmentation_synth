@@ -4,15 +4,14 @@ import albumentations as A
 
 from albumentations.pytorch import ToTensorV2
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
-from model.checkpoint import ModelCheckpoint
-from utils.metrics import IoU
-from datasets.custom_dataset import create_dataloaders
+from src.models.checkpoint import ModelCheckpoint
+from src.utils.metrics import IoU
+from src.datasets.custom_dataset import create_dataloaders
 from tqdm import tqdm
 
 transform = A.Compose([
     A.Resize(height=512, width=512),
     A.Normalize(),
-
     A.HorizontalFlip(p=0.5),
     A.VerticalFlip(p=0.5),
     A.RandomRotate90(p=0.5),
@@ -20,13 +19,28 @@ transform = A.Compose([
     A.ElasticTransform(p=0.5),
     A.RandomBrightnessContrast(p=0.5),
     A.GridDistortion(p=0.5),
-
     ToTensorV2(),
 ])
 
 
+def get_transforms():
+    transforms = [
+        A.Resize(height=512, width=512),
+        A.Normalize(),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.ShiftScaleRotate(p=0.5),
+        A.ElasticTransform(p=0.5),
+        A.RandomBrightnessContrast(p=0.5),
+        A.GridDistortion(p=0.5),
+        ToTensorV2(),
+    ]
+    return A.Compose(transforms)
+
+
 @click.command()
-@click.option('--model_path', default='model/output/model.pth')
+@click.option('--model_path', default='models/output/model.pth')
 @click.option('--image_dir', default='data/processed/images/')
 @click.option('--mask_dir', default='data/processed/masks/')
 @click.option('--batch_size', default=16)
@@ -66,8 +80,7 @@ def train_model(model_path,
     print('Creating dataloaders...')
     train_dataloader, \
         val_dataloader, \
-        test_dataloader = create_dataloaders(image_dir, mask_dir,
-                                             batch_size, transform=transform)
+        _ = create_dataloaders(image_dir, mask_dir, batch_size, transform=transform)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
