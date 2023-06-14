@@ -1,56 +1,49 @@
 import torch
 import click
+import os
+import sys
 
-
+from tqdm import tqdm
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
-from tqdm import tqdm
 
-
-def get_transforms():
-    transforms = [
-        A.Resize(height=512, width=512),
-        A.Normalize(),
-        A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.RandomRotate90(p=0.5),
-        A.ShiftScaleRotate(p=0.5),
-        A.ElasticTransform(p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-        A.GridDistortion(p=0.5),
-        ToTensorV2(),
-    ]
-    return A.Compose(transforms)
+src_path = os.path.join(os.getcwd(), 'src')
+sys.path.append(src_path)
 
 
 @click.command()
 @click.option('--model_path', default='../../models/output/model.pth')
 @click.option('--image_dir', default='../../data/processed/images/')
 @click.option('--mask_dir', default='../../data/processed/masks/')
+@click.option('--dataloader_dir', default='../../models/output/dataloader.pkl')
 @click.option('--batch_size', default=16)
 @click.option('--num_classes', default=21)
-@click.option('--num_epochs', default=100) 
+@click.option('--num_epochs', default=100)
 def get_cli_params_for_training(model_path,
-                                num_classes,
-                                batch_size,
-                                num_epochs,
                                 image_dir,
-                                mask_dir):
-
+                                mask_dir,
+                                dataloader_dir,
+                                batch_size,
+                                num_classes,
+                                num_epochs,):
     train_model(model_path,
+                image_dir,
+                mask_dir,
+                dataloader_dir,
                 num_classes,
                 batch_size,
-                num_epochs,
-                image_dir, mask_dir)
+                num_epochs,)
 
 
 def train_model(model_path,
+                image_dir,
+                mask_dir,
+                dataloader_dir,
                 num_classes,
                 batch_size,
-                num_epochs,
-                image_dir, mask_dir):
+                num_epochs,):
 
     checkpoint = None
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -66,12 +59,15 @@ def train_model(model_path,
     print('Creating dataloaders...')
     train_dataloader, \
         val_dataloader, \
-        _ = create_dataloaders(image_dir, mask_dir, batch_size, transform=transform)
+        _ = create_dataloaders(image_dir=image_dir,
+                               mask_dir=mask_dir,
+                               dataloader_dir=dataloader_dir,
+                               batch_size=batch_size)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
-    
+
     print('Training model...')
     # tqdm pbar
     pbar = tqdm(range(num_epochs), position=0)
@@ -114,6 +110,7 @@ def train_model(model_path,
             model.eval()
             running_loss = 0.
             epoch_iou = 0.
+
             with torch.no_grad():
                 for images, masks in val_dataloader:
                     images = images.to(device)
@@ -145,7 +142,7 @@ def train_model(model_path,
         return model
 
     except KeyboardInterrupt:
-        interrupt_message.set_description_str('Training Interrupted by User!!!!', refresh=True)
+        interrupt_message.set_description_str('Training Interrupted by User!!!', refresh=True)
         return model
 
 
