@@ -59,7 +59,7 @@ def train_model(model_path,
     model = deeplabv3_mobilenet_v3_large(num_classes=num_classes)
     model = model.to(device)
 
-    if model_path:
+    if os.path.exists(model_path):
         checkpoint = ModelCheckpoint(model, model_path)
         model.load_state_dict(torch.load(model_path, map_location=device))
         print('Model has been loaded!')
