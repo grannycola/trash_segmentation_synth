@@ -1,0 +1,7 @@
+model_path: '../../models/output/model.pth'
+image_dir: '../../data/processed/images/'
+mask_dir: '../../data/processed/masks/'
+dataloader_dir: '../../models/output/dataloader.pkl'
+batch_size: 16
+num_classes: 21
+num_epochs: 100

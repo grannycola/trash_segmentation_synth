@@ -2,6 +2,7 @@ import torch
 import click
 import os
 import sys
+import yaml
 
 from tqdm import tqdm
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
@@ -13,14 +14,22 @@ src_path = os.path.join(os.getcwd(), 'src')
 sys.path.append(src_path)
 
 
+def get_default_from_yaml(param_name):
+    with open('../../config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+
+    default_value = config.get(param_name, 0)
+    return default_value
+
+
 @click.command()
-@click.option('--model_path', default='../../models/output/model.pth')
-@click.option('--image_dir', default='../../data/processed/images/')
-@click.option('--mask_dir', default='../../data/processed/masks/')
-@click.option('--dataloader_dir', default='../../models/output/dataloader.pkl')
-@click.option('--batch_size', default=16)
-@click.option('--num_classes', default=21)
-@click.option('--num_epochs', default=100)
+@click.option('--model_path', default=get_default_from_yaml('model_path'))
+@click.option('--image_dir', default=get_default_from_yaml('image_dir'))
+@click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
+@click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
+@click.option('--batch_size', default=get_default_from_yaml('batch_size'))
+@click.option('--num_classes', default=get_default_from_yaml('num_classes'))
+@click.option('--num_epochs', default=get_default_from_yaml('num_epochs'))
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,

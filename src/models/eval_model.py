@@ -1,15 +1,23 @@
 import torch
 import click
+import yaml
 
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from custom_dataset import create_dataloaders
 from metrics import IoU
 
 
+def get_default_from_yaml(param_name):
+    with open('../../config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+    default_value = config.get(param_name, 0)
+    return default_value
+
+
 @click.command()
-@click.option('--model_path', default='../../models/output/model.pth')
-@click.option('--dataloader_dir', default='../../models/output/dataloader.pkl')
-@click.option('--num_classes', default=21)
+@click.option('--model_path', default=get_default_from_yaml('model_path'))
+@click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
+@click.option('--num_classes', default=int(get_default_from_yaml('num_classes')))
 def get_cli_params_for_eval(model_path, dataloader_dir, num_classes):
     eval_model(model_path, dataloader_dir, num_classes)
 
