@@ -1,12 +1,12 @@
 import torch
 import click
+from custom_dataset import create_dataloaders
+from metrics import IoU
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
-from src.datasets.custom_dataset import create_dataloaders
-from src.utils.metrics import IoU
 
 
 @click.command()
-@click.option('--model_path', default='models/output/model.pth')
+@click.option('--model_path', default='../../models/output/model.pth')
 @click.option('--num_classes', default=21)
 def get_cli_params_for_eval(model_path, num_classes):
     eval_model(model_path,

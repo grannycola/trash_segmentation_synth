@@ -4,9 +4,9 @@ import albumentations as A
 
 from albumentations.pytorch import ToTensorV2
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
-from src.models.checkpoint import ModelCheckpoint
-from src.utils.metrics import IoU
-from src.datasets.custom_dataset import create_dataloaders
+from checkpoint import ModelCheckpoint
+from metrics import IoU
+from custom_dataset import create_dataloaders
 from tqdm import tqdm
 
 transform = A.Compose([
@@ -40,12 +40,12 @@ def get_transforms():
 
 
 @click.command()
-@click.option('--model_path', default='models/output/model.pth')
-@click.option('--image_dir', default='data/processed/images/')
-@click.option('--mask_dir', default='data/processed/masks/')
+@click.option('--model_path', default='../../models/output/model.pth')
+@click.option('--image_dir', default='../../data/processed/images/')
+@click.option('--mask_dir', default='../../data/processed/masks/')
 @click.option('--batch_size', default=16)
 @click.option('--num_classes', default=21)
-@click.option('--num_epochs', default=100)
+@click.option('--num_epochs', default=100) 
 def get_cli_params_for_training(model_path,
                                 num_classes,
                                 batch_size,
