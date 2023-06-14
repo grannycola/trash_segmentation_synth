@@ -1,26 +1,12 @@
 import torch
 import click
-import albumentations as A
 
-from albumentations.pytorch import ToTensorV2
+
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
 from tqdm import tqdm
-
-transform = A.Compose([
-    A.Resize(height=512, width=512),
-    A.Normalize(),
-    A.HorizontalFlip(p=0.5),
-    A.VerticalFlip(p=0.5),
-    A.RandomRotate90(p=0.5),
-    A.ShiftScaleRotate(p=0.5),
-    A.ElasticTransform(p=0.5),
-    A.RandomBrightnessContrast(p=0.5),
-    A.GridDistortion(p=0.5),
-    ToTensorV2(),
-])
 
 
 def get_transforms():

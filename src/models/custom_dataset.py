@@ -1,9 +1,26 @@
 import os
 import numpy as np
+import pickle
+import albumentations as A
+
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
-import pickle
+from albumentations.pytorch import ToTensorV2
+
+
+transform = A.Compose([
+    A.Resize(height=512, width=512),
+    A.Normalize(),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.RandomRotate90(p=0.5),
+    A.ShiftScaleRotate(p=0.5),
+    A.ElasticTransform(p=0.5),
+    A.RandomBrightnessContrast(p=0.5),
+    A.GridDistortion(p=0.5),
+    ToTensorV2(),
+])
 
 
 class TacoDataset(Dataset):
@@ -33,7 +50,9 @@ class TacoDataset(Dataset):
         return image, mask
 
 
-def create_dataloaders(image_dir=None, mask_dir=None, batch_size=None, transform=None):
+def create_dataloaders(image_dir='../../data/processed/images/',
+                      mask_dir='../../data/processed/masks/',
+                      batch_size=16, transform=transform):
     file_path = 'models/output/dataloader.pkl'
 
     if not os.path.exists(file_path):
