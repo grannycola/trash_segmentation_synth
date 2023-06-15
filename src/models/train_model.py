@@ -5,7 +5,7 @@ import sys
 import yaml
 
 from tqdm import tqdm
-from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
+from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
@@ -54,13 +54,12 @@ def train_model(model_path,
                 batch_size,
                 num_epochs,):
 
-    checkpoint = None
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = deeplabv3_mobilenet_v3_large(num_classes=num_classes)
+    model = model_type(num_classes=num_classes)
     model = model.to(device)
+    checkpoint = ModelCheckpoint(model, model_path)
 
     if os.path.exists(model_path):
-        checkpoint = ModelCheckpoint(model, model_path)
         model.load_state_dict(torch.load(model_path, map_location=device))
         print('Model has been loaded!')
 
@@ -71,7 +70,8 @@ def train_model(model_path,
         _ = create_dataloaders(image_dir=image_dir,
                                mask_dir=mask_dir,
                                dataloader_dir=dataloader_dir,
-                               batch_size=batch_size)
+                               batch_size=batch_size,
+                               num_classes=num_classes)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)

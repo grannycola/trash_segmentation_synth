@@ -2,7 +2,7 @@ import torch
 import click
 import yaml
 
-from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
+from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from custom_dataset import create_dataloaders
 from metrics import IoU
 
@@ -24,9 +24,10 @@ def get_cli_params_for_eval(model_path, dataloader_dir, num_classes):
 
 def eval_model(model_path, dataloader_dir, num_classes):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = deeplabv3_mobilenet_v3_large(num_classes=num_classes)
+    model = model_type(num_classes=num_classes)
     model = model.to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
+    print(model_path)
     print('Model has been loaded!')
 
     # Set dataloaders

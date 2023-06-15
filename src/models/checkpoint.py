@@ -9,5 +9,6 @@ class ModelCheckpoint:
 
     def __call__(self, epoch, val_loss):
         if val_loss < self.best_loss:
+            print('Model saved!')
             self.best_loss = val_loss
             torch.save(self.model.state_dict(), self.file_path)

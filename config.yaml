@@ -2,6 +2,6 @@ model_path: '../../models/output/model_5_classes.pth'
 image_dir: '../../data/processed/images/'
 mask_dir: '../../data/processed/masks_5_classes/'
 dataloader_dir: '../../models/output/dataloader_5_classes.pkl'
-batch_size: 8
+batch_size: 64
 num_classes: 6
-num_epochs: 10
+num_epochs: 500
