@@ -61,9 +61,7 @@ def create_dataloaders(image_dir=None,
                        dataloader_dir=None,
                        batch_size=None,
                        num_classes=None,
-                       transform=get_transform(),
-                       load_from_file=False,
-                       balance_labels=False):
+                       transform=get_transform(),):
 
     if not os.path.exists(dataloader_dir):
         print('Making new dataloader.pkl...')
@@ -85,8 +83,8 @@ def create_dataloaders(image_dir=None,
         val_dataset, test_dataset = train_test_split(test_val_dataset, test_size=0.5, random_state=42)
 
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=8, sampler=None)
-        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
-        test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True, num_workers=8)
+        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=8)
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=8)
 
         with open(dataloader_dir, 'wb') as f:
             pickle.dump([train_dataloader,
