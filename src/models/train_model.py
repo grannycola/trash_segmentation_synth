@@ -88,6 +88,7 @@ def train_model(model_path,
         
         for epoch in pbar:
 
+            model.train()
             running_loss = 0.
             epoch_iou = 0.
 
