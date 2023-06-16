@@ -4,6 +4,9 @@ import os
 import sys
 import yaml
 
+torch.cuda.empty_cache()
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from checkpoint import ModelCheckpoint
