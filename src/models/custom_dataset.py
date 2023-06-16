@@ -3,11 +3,19 @@ import numpy as np
 import pickle
 import albumentations as A
 import torch
+import yaml
+
 
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.model_selection import train_test_split
 from albumentations.pytorch import ToTensorV2
+
+def get_default_from_yaml(param_name):
+    with open('../../config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+    default_value = config.get(param_name, 0)
+    return default_value
 
 
 def get_transform():
@@ -82,9 +90,9 @@ def create_dataloaders(image_dir=None,
         train_dataset, test_val_dataset = train_test_split(dataset, test_size=0.2, random_state=123)
         val_dataset, test_dataset = train_test_split(test_val_dataset, test_size=0.5, random_state=123)
 
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=8, sampler=None)
-        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=8)
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=8)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=get_default_from_yaml('num_workers'), sampler=None)
+        val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=get_default_from_yaml('num_workers'))
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, num_workers=get_default_from_yaml('num_workers'))
 
         with open(dataloader_dir, 'wb') as f:
             pickle.dump([train_dataloader,
