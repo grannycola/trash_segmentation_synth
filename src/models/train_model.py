@@ -113,7 +113,7 @@ def train_model(model_path,
             epoch_iou /= len(train_dataloader)
 
             # tqdm desc-string for train
-            train_desc_str += f'Train values - Loss: {last_loss} IoU: {epoch_iou}'
+            train_desc_str = f'Train values - Loss: {last_loss} IoU: {epoch_iou}'
 
             # Validation on one epoch
             model.eval()
@@ -136,14 +136,11 @@ def train_model(model_path,
             epoch_iou /= len(val_dataloader)
 
             # tqdm desc-string for val
-            val_desc_str += f'Val values - Loss: {val_loss} IoU: {epoch_iou}'
+            val_desc_str = f'Val values - Loss: {val_loss} IoU: {epoch_iou}'
 
             # Set value then clear strings
             pbar_desc_train.set_description_str(train_desc_str, refresh=True)
             pbar_desc_val.set_description_str(val_desc_str, refresh=True)
-
-            train_desc_str = ''
-            val_desc_str = ''
 
             if checkpoint:
                 checkpoint(epoch + 1, val_loss)
