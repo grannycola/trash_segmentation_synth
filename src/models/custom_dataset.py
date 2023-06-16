@@ -73,14 +73,14 @@ def create_dataloaders(image_dir=None,
         #     print(i, end="\r")
         #     labels = torch.flatten(masks).to(device)
         #     labels_count += torch.bincount(labels, minlength=num_classes)
-        #
+
         # class_inverse_frequencies = 1.0 / labels_count
         # class_weights = class_inverse_frequencies / torch.sum(class_inverse_frequencies)
         # class_weights[0] = 0
         # sampler = WeightedRandomSampler(class_weights, num_samples=len(dataset), replacement=True)
 
-        train_dataset, test_val_dataset = train_test_split(dataset, test_size=0.2, random_state=42)
-        val_dataset, test_dataset = train_test_split(test_val_dataset, test_size=0.5, random_state=42)
+        train_dataset, test_val_dataset = train_test_split(dataset, test_size=0.2, random_state=123)
+        val_dataset, test_dataset = train_test_split(test_val_dataset, test_size=0.5, random_state=123)
 
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=8, sampler=None)
         val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=8)

@@ -9,6 +9,8 @@ from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_t
 from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
+from tensorboardX import SummaryWriter
+
 
 src_path = os.path.join(os.getcwd(), 'src')
 sys.path.append(src_path)
@@ -27,6 +29,7 @@ def get_default_from_yaml(param_name):
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
 @click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
+@click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
 @click.option('--batch_size', default=get_default_from_yaml('batch_size'))
 @click.option('--num_classes', default=get_default_from_yaml('num_classes'))
 @click.option('--num_epochs', default=get_default_from_yaml('num_epochs'))
@@ -34,6 +37,7 @@ def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
                                 dataloader_dir,
+                                logs_dir,
                                 batch_size,
                                 num_classes,
                                 num_epochs,):
@@ -41,6 +45,7 @@ def get_cli_params_for_training(model_path,
                 image_dir,
                 mask_dir,
                 dataloader_dir,
+                logs_dir,
                 num_classes,
                 batch_size,
                 num_epochs,)
@@ -50,10 +55,12 @@ def train_model(model_path,
                 image_dir,
                 mask_dir,
                 dataloader_dir,
+                logs_dir,
                 num_classes,
                 batch_size,
                 num_epochs,):
 
+    writer = SummaryWriter(logs_dir)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model_type(num_classes=num_classes)
     model = model.to(device)
@@ -90,7 +97,7 @@ def train_model(model_path,
 
             model.train()
             running_loss = 0.
-            epoch_iou = 0.
+            train_iou = 0.
 
             # Training on one epoch
             for i, (images, masks) in enumerate(train_dataloader):
@@ -101,23 +108,23 @@ def train_model(model_path,
                 outputs = model(images)['out']
                 preds = torch.argmax(outputs, dim=1)
 
-                epoch_iou += IoU(preds, masks, num_classes)
+                train_iou += IoU(preds, masks, num_classes)
                 loss_value = loss(outputs, masks.squeeze(1).long())
                 loss_value.backward()
 
                 optimizer.step()
                 running_loss += loss_value
 
-            last_loss = running_loss / len(train_dataloader)
-            epoch_iou /= len(train_dataloader)
+            train_loss = running_loss / len(train_dataloader)
+            train_iou /= len(train_dataloader)
 
             # tqdm desc-string for train
-            train_desc_str = f'Train values - Loss: {round(float(last_loss), 2)} IoU: {round(float(epoch_iou), 2)}'
+            train_desc_str = f'Train values - Loss: {round(float(train_loss), 2)} IoU: {round(float(train_iou), 2)}'
 
             # Validation on one epoch
             model.eval()
             running_loss = 0.
-            epoch_iou = 0.
+            val_iou = 0.
 
             with torch.no_grad():
                 for images, masks in val_dataloader:
@@ -129,25 +136,32 @@ def train_model(model_path,
                     loss_value = loss(outputs, masks.squeeze(1).long())
 
                     running_loss += loss_value
-                    epoch_iou += IoU(preds, masks, num_classes)
+                    val_iou += IoU(preds, masks, num_classes)
 
             val_loss = running_loss / len(val_dataloader)
-            epoch_iou /= len(val_dataloader)
+            val_iou /= len(val_dataloader)
 
             # tqdm desc-string for val
-            val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(epoch_iou), 2)}'
+            val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
 
             # Set value then clear strings
             pbar_desc_train.set_description_str(train_desc_str, refresh=True)
             pbar_desc_val.set_description_str(val_desc_str, refresh=True)
 
+            writer.add_scalar('Loss/Train', train_loss, epoch + 1)
+            writer.add_scalar('Loss/Val', val_loss, epoch + 1)
+            writer.add_scalar('IoU/Train', train_iou, epoch + 1)
+            writer.add_scalar('IoU/Val', val_iou, epoch + 1)
+
             if checkpoint:
                 checkpoint(epoch + 1, val_loss)
 
+        writer.close()
         return model
 
     except KeyboardInterrupt:
         interrupt_message.set_description_str('Training Interrupted by User!!!', refresh=True)
+        writer.close()
         return model
 
 
