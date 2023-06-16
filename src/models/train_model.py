@@ -85,9 +85,7 @@ def train_model(model_path,
     interrupt_message = tqdm(total=0, position=3, bar_format='{desc}')
 
     try:
-        train_desc_str = ''
-        val_desc_str = ''
-
+        
         for epoch in pbar:
 
             running_loss = 0.
