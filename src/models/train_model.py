@@ -86,23 +86,31 @@ def train_model(model_path,
 
     print('Training model...')
     # tqdm pbar
-    pbar = tqdm(range(num_epochs), position=0)
-    pbar_desc_train = tqdm(total=0, position=1, bar_format='{desc}')
-    pbar_desc_val = tqdm(total=0, position=2, bar_format='{desc}')
-    interrupt_message = tqdm(total=0, position=3, bar_format='{desc}')
+    pbar = tqdm(range(num_epochs),
+                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
+    pbar_batches = tqdm(total=len(train_dataloader), position=1,
+                        bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+
+    pbar_desc_train = tqdm(total=0, position=2, bar_format='{desc}')
+    pbar_desc_val = tqdm(total=0, position=3, bar_format='{desc}')
+    interrupt_message = tqdm(total=0, position=4, bar_format='{desc}')
 
     try:
-        
+
         for epoch in pbar:
 
             model.train()
             running_loss = 0.
             train_iou = 0.
 
+            pbar_batches.reset()
+
             # Training on one epoch
             for i, (images, masks) in enumerate(train_dataloader):
                 images = images.to(device)
                 masks = masks.to(device)
+
+                pbar_batches.update(1)
 
                 optimizer.zero_grad()
                 outputs = model(images)['out']

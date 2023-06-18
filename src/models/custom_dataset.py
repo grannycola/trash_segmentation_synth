@@ -40,6 +40,7 @@ def get_transform():
 def get_val_transform():
     transform = [
         A.Resize(height=512, width=512),
+        A.Normalize(),
         ToTensorV2(),
     ]
     return A.Compose(transform)
