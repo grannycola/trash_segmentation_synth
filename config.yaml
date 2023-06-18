@@ -5,4 +5,5 @@ dataloader_dir: '../../models/output/dataloader_5_classes.pkl'
 logs_dir: '../../models/output/logs'
 batch_size: 64
 num_classes: 6
-num_epochs: 500
+num_epochs: 100
+num_workers: 8

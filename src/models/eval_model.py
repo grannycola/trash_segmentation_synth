@@ -47,6 +47,7 @@ def eval_model(model_path, dataloader_dir, num_classes):
 
         epoch_iou /= len(test_dataloader)
         print(f'IoU: {epoch_iou}')
+    return model
 
 
 if __name__ == '__main__':
