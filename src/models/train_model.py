@@ -30,9 +30,9 @@ def get_default_from_yaml(param_name):
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
 @click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
-@click.option('--batch_size', default=get_default_from_yaml('batch_size'))
-@click.option('--num_classes', default=get_default_from_yaml('num_classes'))
-@click.option('--num_epochs', default=get_default_from_yaml('num_epochs'))
+@click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size')
+@click.option('--num_classes', default=get_default_from_yaml('num_classes'), help='Number of classes including background class')
+@click.option('--num_epochs', default=get_default_from_yaml('num_epochs'), help='Number of epochs for training')
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
