@@ -11,7 +11,6 @@ from metrics import IoU
 from custom_dataset import create_dataloaders
 from tensorboardX import SummaryWriter
 
-
 src_path = os.path.join(os.getcwd(), 'src')
 sys.path.append(src_path)
 
@@ -31,7 +30,8 @@ def get_default_from_yaml(param_name):
 @click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
 @click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size')
-@click.option('--num_classes', default=get_default_from_yaml('num_classes'), help='Number of classes including background class')
+@click.option('--num_classes', default=get_default_from_yaml('num_classes'),
+              help='Number of classes including background class')
 @click.option('--num_epochs', default=get_default_from_yaml('num_epochs'), help='Number of epochs for training')
 def get_cli_params_for_training(model_path,
                                 image_dir,
@@ -40,7 +40,7 @@ def get_cli_params_for_training(model_path,
                                 logs_dir,
                                 batch_size,
                                 num_classes,
-                                num_epochs,):
+                                num_epochs, ):
     train_model(model_path,
                 image_dir,
                 mask_dir,
@@ -48,7 +48,7 @@ def get_cli_params_for_training(model_path,
                 logs_dir,
                 num_classes,
                 batch_size,
-                num_epochs,)
+                num_epochs, )
 
 
 def train_model(model_path,
@@ -58,7 +58,16 @@ def train_model(model_path,
                 logs_dir,
                 num_classes,
                 batch_size,
-                num_epochs,):
+                num_epochs, ):
+
+    # Set dataloaders
+    print('Creating dataloaders...')
+    train_dataloader, val_dataloader, _ = \
+        create_dataloaders(image_dir=image_dir,
+                           mask_dir=mask_dir,
+                           dataloader_dir=dataloader_dir,
+                           batch_size=batch_size,
+                           num_classes=num_classes)
 
     writer = SummaryWriter(logs_dir)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -69,16 +78,6 @@ def train_model(model_path,
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
         print('Model has been loaded!')
-
-    # Set dataloaders
-    print('Creating dataloaders...')
-    train_dataloader, \
-        val_dataloader, \
-        _ = create_dataloaders(image_dir=image_dir,
-                               mask_dir=mask_dir,
-                               dataloader_dir=dataloader_dir,
-                               batch_size=batch_size,
-                               num_classes=num_classes)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)

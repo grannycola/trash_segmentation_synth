@@ -80,23 +80,24 @@ def create_dataloaders(image_dir=None,
                        dataloader_dir=None,
                        batch_size=None,
                        num_classes=None,
+                       val_proportion=get_default_from_yaml('val_proportion'),
+                       test_proportion=get_default_from_yaml('test_proportion'),
                        transform=get_transform(),):
+
+    if val_proportion + test_proportion >= 1:
+        raise Exception("Sum of val and test proportions should be less than 1")
 
     if not os.path.exists(dataloader_dir):
         print('Making new dataloader.pkl...')
         # Определите размеры наборов train, test и validation
         dataset = TacoDataset(image_dir, mask_dir)
 
-        train_size = int(0.8 * len(dataset))
-        test_size = int(0.1 * len(dataset))
-        val_size = len(dataset) - train_size - test_size
+        test_size = int(test_proportion * len(dataset))
+        val_size = int(val_proportion * len(dataset))
+        train_size = len(dataset) - test_size - val_size
 
         train_dataset, test_val_dataset = random_split(dataset, [train_size, test_size + val_size])
         test_dataset, val_dataset = random_split(test_val_dataset, [test_size, val_size])
-
-        print(len(train_dataset))
-        print(len(val_dataset))
-        print(len(test_dataset))
 
         train_dataset.dataset.transform = transform
         test_dataset.dataset.transform = get_val_transform()
