@@ -11,8 +11,9 @@ To train the model, you can use the ```python src/models/train_model.py``` file 
 - "Cup": 5
 
 # Prediction Examples
-![](https://i.ibb.co/R0zvRng/image.png)
-![](https://i.ibb.co/G7P7twy/1.png)
+![image](https://github.com/grannycola/trash_segmentation_synth/assets/54438026/24e0a73b-c776-4461-a7a3-e71b321ca32f)
+![1](https://github.com/grannycola/trash_segmentation_synth/assets/54438026/9a3f41a1-c195-42b6-b610-199055e93162)
+
 
 # Confusion Matrix
 ![](https://i.ibb.co/j3FgM8n/CM.png)
