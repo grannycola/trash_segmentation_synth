@@ -16,7 +16,8 @@ To train the model, you can use the ```python src/models/train_model.py``` file 
 
 
 # Confusion Matrix
-![](https://i.ibb.co/j3FgM8n/CM.png)
+![CM](https://github.com/grannycola/trash_segmentation_synth/assets/54438026/b2a27b05-61f1-423d-b1c4-d97fe853094b)
+
 
 # Requirements
 - torchmetrics~=0.11.4
