@@ -16,13 +16,12 @@ def get_default_from_yaml(param_name):
 
 @click.command()
 @click.option('--model_path', default=get_default_from_yaml('model_path'))
-@click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
 @click.option('--num_classes', default=int(get_default_from_yaml('num_classes')))
-def get_cli_params_for_eval(model_path, dataloader_dir, num_classes):
-    eval_model(model_path, dataloader_dir, num_classes)
+def get_cli_params_for_eval(model_path, num_classes):
+    eval_model(model_path, num_classes)
 
 
-def eval_model(model_path, dataloader_dir, num_classes):
+def eval_model(model_path, num_classes):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model_type(num_classes=num_classes)
     model = model.to(device)
@@ -32,7 +31,7 @@ def eval_model(model_path, dataloader_dir, num_classes):
 
     # Set dataloaders
     print('Creating dataloaders...')
-    _, _, test_dataloader = create_dataloaders(dataloader_dir=dataloader_dir)
+    _, _, test_dataloader = create_dataloaders()
 
     model.eval()
     with torch.no_grad():

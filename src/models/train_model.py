@@ -27,7 +27,6 @@ def get_default_from_yaml(param_name):
 @click.option('--model_path', default=get_default_from_yaml('model_path'))
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
-@click.option('--dataloader_dir', default=get_default_from_yaml('dataloader_dir'))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
 @click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size')
 @click.option('--num_classes', default=get_default_from_yaml('num_classes'),
@@ -36,7 +35,6 @@ def get_default_from_yaml(param_name):
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
-                                dataloader_dir,
                                 logs_dir,
                                 batch_size,
                                 num_classes,
@@ -44,7 +42,6 @@ def get_cli_params_for_training(model_path,
     train_model(model_path,
                 image_dir,
                 mask_dir,
-                dataloader_dir,
                 logs_dir,
                 num_classes,
                 batch_size,
@@ -54,7 +51,6 @@ def get_cli_params_for_training(model_path,
 def train_model(model_path,
                 image_dir,
                 mask_dir,
-                dataloader_dir,
                 logs_dir,
                 num_classes,
                 batch_size,
@@ -65,7 +61,6 @@ def train_model(model_path,
     train_dataloader, val_dataloader, _ = \
         create_dataloaders(image_dir=image_dir,
                            mask_dir=mask_dir,
-                           dataloader_dir=dataloader_dir,
                            batch_size=batch_size,
                            num_classes=num_classes)
 

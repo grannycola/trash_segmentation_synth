@@ -5,11 +5,11 @@ import albumentations as A
 import torch
 import yaml
 
-
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler, random_split
-from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, DataLoader, random_split, ConcatDataset
 from albumentations.pytorch import ToTensorV2
+
+torch.manual_seed(42)
 
 
 def get_default_from_yaml(param_name):
@@ -21,14 +21,14 @@ def get_default_from_yaml(param_name):
 
 def get_transform():
     transform = [
-        A.Resize(height=512, width=512),
+        A.Resize(height=256, width=256),
         A.Normalize(),
 
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
 
         A.Perspective(scale=(0.05, 0.1), p=0.5),
-        A.ElasticTransform(p=0.6),
+        A.ElasticTransform(p=0.3),
         A.RandomBrightnessContrast(p=0.3),
 
         A.Blur(p=0.1),
@@ -39,7 +39,7 @@ def get_transform():
 
 def get_val_transform():
     transform = [
-        A.Resize(height=512, width=512),
+        A.Resize(height=256, width=256),
         A.Normalize(),
         ToTensorV2(),
     ]
@@ -77,57 +77,56 @@ class TacoDataset(Dataset):
 
 def create_dataloaders(image_dir=None,
                        mask_dir=None,
-                       dataloader_dir=None,
                        batch_size=None,
                        num_classes=None,
                        val_proportion=get_default_from_yaml('val_proportion'),
                        test_proportion=get_default_from_yaml('test_proportion'),
-                       transform=get_transform(),):
+                       transform=get_transform(), ):
 
     if val_proportion + test_proportion >= 1:
         raise Exception("Sum of val and test proportions should be less than 1")
 
-    if not os.path.exists(dataloader_dir):
-        print('Making new dataloader.pkl...')
-        # Определите размеры наборов train, test и validation
-        dataset = TacoDataset(image_dir, mask_dir)
+    print('Making new dataloader...')
+    # Определите размеры наборов train, test и validation
+    dataset = TacoDataset(image_dir, mask_dir)
 
-        test_size = int(test_proportion * len(dataset))
-        val_size = int(val_proportion * len(dataset))
-        train_size = len(dataset) - test_size - val_size
+    test_size = int(test_proportion * len(dataset))
+    val_size = int(val_proportion * len(dataset))
+    train_size = len(dataset) - test_size - val_size
 
-        train_dataset, test_val_dataset = random_split(dataset, [train_size, test_size + val_size])
-        test_dataset, val_dataset = random_split(test_val_dataset, [test_size, val_size])
+    train_dataset, test_val_dataset = random_split(dataset, [train_size, test_size + val_size])
+    test_dataset, val_dataset = random_split(test_val_dataset, [test_size, val_size])
 
-        train_dataset.dataset.transform = transform
-        test_dataset.dataset.transform = get_val_transform()
-        val_dataset.dataset.transform = get_val_transform()
+    train_dataset.dataset.transform = transform
+    test_dataset.dataset.transform = get_val_transform()
+    val_dataset.dataset.transform = get_val_transform()
 
-        train_dataloader = DataLoader(train_dataset,
-                                      batch_size=batch_size,
-                                      num_workers=get_default_from_yaml('num_workers'),
-                                      sampler=None)
+    synthetized_dataset = TacoDataset('../../data/synthetized_data/images/',
+                                      '../../data/synthetized_data/masks_5_classes/',
+                                      transform=transform)
 
-        val_dataloader = DataLoader(val_dataset,
-                                    batch_size=batch_size,
-                                    num_workers=get_default_from_yaml('num_workers'))
+    synthetized_size = int(0.2 * train_size)
+    if synthetized_size > 0:
+        mix_train_dataset, _ = random_split(synthetized_dataset,
+                                            [synthetized_size,
+                                             len(synthetized_dataset) - synthetized_size])
+        mix_train_dataset.dataset.transform = transform
+        train_dataset = ConcatDataset([train_dataset, mix_train_dataset])
 
-        test_dataloader = DataLoader(test_dataset,
-                                     batch_size=batch_size,
-                                     num_workers=get_default_from_yaml('num_workers'))
+    print(len(train_dataset))
+    print(len(val_dataset))
+    print(len(test_dataset))
+    train_dataloader = DataLoader(train_dataset,
+                                  batch_size=batch_size,
+                                  num_workers=get_default_from_yaml('num_workers'),
+                                  sampler=None)
 
-        with open(dataloader_dir, 'wb') as f:
-            pickle.dump([train_dataloader,
-                         val_dataloader,
-                         test_dataloader], f)
+    val_dataloader = DataLoader(val_dataset,
+                                batch_size=batch_size,
+                                num_workers=get_default_from_yaml('num_workers'))
 
-        return train_dataloader, val_dataloader, test_dataloader
-    else:
-        print('Loading  from file...')
+    test_dataloader = DataLoader(test_dataset,
+                                 batch_size=batch_size,
+                                 num_workers=get_default_from_yaml('num_workers'))
 
-        with open(dataloader_dir, 'rb') as f:
-            train_dataloader, \
-                val_dataloader, \
-                test_dataloader = pickle.load(f)
-            print('Done')
-            return train_dataloader, val_dataloader, test_dataloader
+    return train_dataloader, val_dataloader, test_dataloader
