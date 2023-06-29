@@ -24,19 +24,22 @@ def get_default_from_yaml(param_name):
 
 
 @click.command()
-@click.option('--model_path', default=get_default_from_yaml('model_path'))
-@click.option('--image_dir', default=get_default_from_yaml('image_dir'))
-@click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
-@click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
+@click.option('--model_path', default=get_default_from_yaml('model_path'), type=click.Path(exists=True))
+@click.option('--image_dir', default=get_default_from_yaml('image_dir'), type=click.Path(exists=True))
+@click.option('--mask_dir', default=get_default_from_yaml('mask_dir'), type=click.Path(exists=True))
+@click.option('--logs_dir', default=get_default_from_yaml('logs_dir'), type=click.Path())
 @click.option('--batch_size',
               default=get_default_from_yaml('batch_size'),
-              help='Batch size')
+              help='Batch size',
+              type=click.INT)
 @click.option('--num_classes',
               default=get_default_from_yaml('num_classes'),
-              help='Number of classes including background class')
+              help='Number of classes including background class',
+              type=click.INT)
 @click.option('--num_epochs',
               default=get_default_from_yaml('num_epochs'),
-              help='Number of epochs for training')
+              help='Number of epochs for training',
+              type=click.INT)
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
@@ -53,13 +56,23 @@ def get_cli_params_for_training(model_path,
                 num_epochs, )
 
 
-def train_model(model_path,
-                image_dir,
-                mask_dir,
-                logs_dir,
-                num_classes,
-                batch_size,
-                num_epochs, ):
+def train_model(model_path: str,
+                image_dir: str,
+                mask_dir: str,
+                logs_dir: str,
+                num_classes: int,
+                batch_size: int,
+                num_epochs: int, ):
+    """
+    :param model_path: Path to model directory
+    :param image_dir: Path to image directory
+    :param mask_dir: Path to mask directory
+    :param logs_dir: Path to logs directory
+    :param num_classes: Number of classes
+    :param batch_size: Batch size
+    :param num_epochs: Number of epochs
+    :return:
+    """
     # Set dataloaders
     print('Creating dataloaders...')
     train_dataloader, val_dataloader, _ = \
