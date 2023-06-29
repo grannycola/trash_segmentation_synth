@@ -1,4 +1,4 @@
-model_path: '../../models/output/model_5_classes.pth'
+model_path: '../../models/output/model.pth'
 image_dir: '../../data/processed/images/'
 mask_dir: '../../data/processed/masks_5_classes/'
 logs_dir: '../../models/output/logs'

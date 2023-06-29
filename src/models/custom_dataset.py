@@ -116,6 +116,7 @@ def create_dataloaders(image_dir=None,
     print(len(train_dataset))
     print(len(val_dataset))
     print(len(test_dataset))
+
     train_dataloader = DataLoader(train_dataset,
                                   batch_size=batch_size,
                                   num_workers=get_default_from_yaml('num_workers'),

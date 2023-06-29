@@ -24,7 +24,7 @@ def get_default_from_yaml(param_name):
 
 
 @click.command()
-@click.option('--model_path', default=get_default_from_yaml('model_path'), type=click.Path(exists=True))
+@click.option('--model_path', default=get_default_from_yaml('model_path'), type=click.Path())
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'), type=click.Path(exists=True))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'), type=click.Path(exists=True))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'), type=click.Path())
@@ -85,11 +85,13 @@ def train_model(model_path: str,
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model_type(num_classes=num_classes)
     model = model.to(device)
-    checkpoint = ModelCheckpoint(model, model_path)
 
+    checkpoint = ModelCheckpoint(model, model_path)
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path, map_location=device))
+        state = torch.load(model_path, map_location=device)
+        model.load_state_dict(state['model'])
         print('Model has been loaded!')
+        checkpoint = ModelCheckpoint(model, model_path, state['best_loss'])
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
