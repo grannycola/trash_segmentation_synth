@@ -28,10 +28,15 @@ def get_default_from_yaml(param_name):
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'))
-@click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size')
-@click.option('--num_classes', default=get_default_from_yaml('num_classes'),
+@click.option('--batch_size',
+              default=get_default_from_yaml('batch_size'),
+              help='Batch size')
+@click.option('--num_classes',
+              default=get_default_from_yaml('num_classes'),
               help='Number of classes including background class')
-@click.option('--num_epochs', default=get_default_from_yaml('num_epochs'), help='Number of epochs for training')
+@click.option('--num_epochs',
+              default=get_default_from_yaml('num_epochs'),
+              help='Number of epochs for training')
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
@@ -55,7 +60,6 @@ def train_model(model_path,
                 num_classes,
                 batch_size,
                 num_epochs, ):
-
     # Set dataloaders
     print('Creating dataloaders...')
     train_dataloader, val_dataloader, _ = \
@@ -90,9 +94,7 @@ def train_model(model_path,
     interrupt_message = tqdm(total=0, position=4, bar_format='{desc}')
 
     try:
-
         for epoch in pbar:
-
             model.train()
             running_loss = 0.
             train_iou = 0.
@@ -150,19 +152,22 @@ def train_model(model_path,
             pbar_desc_train.set_description_str(train_desc_str, refresh=True)
             pbar_desc_val.set_description_str(val_desc_str, refresh=True)
 
-            writer.add_scalar('Loss/Train', train_loss, epoch + 1)
-            writer.add_scalar('Loss/Val', val_loss, epoch + 1)
-            writer.add_scalar('IoU/Train', train_iou, epoch + 1)
-            writer.add_scalar('IoU/Val', val_iou, epoch + 1)
+            writer.add_scalars('Metrics and loss on train',
+                               {'Loss': train_loss,
+                                'IoU': train_iou}, epoch)
+
+            writer.add_scalars('Metrics and loss on validation',
+                               {'Loss': val_loss,
+                                'IoU': val_iou}, epoch)
 
             if checkpoint:
-                checkpoint(epoch + 1, val_loss)
+                checkpoint(epoch, val_loss)
 
         writer.close()
         return model
 
     except KeyboardInterrupt:
-        interrupt_message.set_description_str('Training Interrupted by User!!!', refresh=True)
+        interrupt_message.set_description_str('Training interrupted by user!', refresh=True)
         writer.close()
         return model
 
