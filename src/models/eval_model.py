@@ -1,10 +1,16 @@
 import torch
 import click
 import yaml
+import os
 
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from custom_dataset import create_dataloaders
 from metrics import IoU
+
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 
 def get_default_from_yaml(param_name):

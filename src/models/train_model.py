@@ -28,10 +28,7 @@ def get_default_from_yaml(param_name):
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'), type=click.Path(exists=True))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'), type=click.Path(exists=True))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'), type=click.Path())
-@click.option('--batch_size',
-              default=get_default_from_yaml('batch_size'),
-              help='Batch size',
-              type=click.INT)
+@click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size', type=click.INT)
 @click.option('--num_classes',
               default=get_default_from_yaml('num_classes'),
               help='Number of classes including background class',
@@ -91,14 +88,18 @@ def train_model(model_path: str,
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state['model'])
         print('Model has been loaded!')
-        checkpoint = ModelCheckpoint(model, model_path, state['best_loss'])
+
+        checkpoint = ModelCheckpoint(model,
+                                     model_path,
+                                     state['best_loss'],
+                                     state['best_metric'],)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss = torch.nn.CrossEntropyLoss()
 
     print('Training model...')
-    # tqdm pbar
+    # custom verbose
     pbar = tqdm(range(num_epochs),
                 bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
     pbar_batches = tqdm(total=len(train_dataloader), position=1,
@@ -167,16 +168,14 @@ def train_model(model_path: str,
             pbar_desc_train.set_description_str(train_desc_str, refresh=True)
             pbar_desc_val.set_description_str(val_desc_str, refresh=True)
 
-            writer.add_scalars('Metrics and loss on train',
-                               {'Loss': train_loss,
-                                'IoU': train_iou}, epoch)
+            writer.add_scalar('Loss/Train', train_loss, epoch)
+            writer.add_scalar('Loss/Val', val_loss, epoch)
 
-            writer.add_scalars('Metrics and loss on validation',
-                               {'Loss': val_loss,
-                                'IoU': val_iou}, epoch)
+            writer.add_scalar('IoU/Train', train_iou, epoch)
+            writer.add_scalar('IoU/Val', val_iou, epoch)
 
             if checkpoint:
-                checkpoint(epoch, val_loss)
+                checkpoint(epoch, val_loss, val_iou)
 
         writer.close()
         return model
