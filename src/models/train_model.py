@@ -10,6 +10,7 @@ from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
 from tensorboardX import SummaryWriter
+from src.utils.make_report import make_report
 
 src_path = os.path.join(os.getcwd(), 'src')
 sys.path.append(src_path)
@@ -176,13 +177,14 @@ def train_model(model_path: str,
 
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
-
+        make_report()
         writer.close()
         return model
 
-    except KeyboardInterrupt:
+    except Exception:
         interrupt_message.set_description_str('Training interrupted by user!', refresh=True)
         writer.close()
+        make_report()
         return model
 
 
