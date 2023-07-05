@@ -8,3 +8,4 @@ num_epochs: 100
 num_workers: 6
 val_proportion: 0.1
 test_proportion: 0.1
+mixing_proportion: 0.5
