@@ -3,6 +3,7 @@ import click
 import os
 import sys
 import yaml
+import inspect
 
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
@@ -38,20 +39,23 @@ def get_default_from_yaml(param_name):
               default=get_default_from_yaml('num_epochs'),
               help='Number of epochs for training',
               type=click.INT)
+@click.option('--mixing_proportion', default=get_default_from_yaml('mixing_proportion'), type=click.FLOAT)
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
                                 logs_dir,
                                 batch_size,
                                 num_classes,
-                                num_epochs, ):
+                                num_epochs,
+                                mixing_proportion):
     train_model(model_path,
                 image_dir,
                 mask_dir,
                 logs_dir,
                 num_classes,
                 batch_size,
-                num_epochs, )
+                num_epochs,
+                mixing_proportion)
 
 
 def train_model(model_path: str,
@@ -60,8 +64,10 @@ def train_model(model_path: str,
                 logs_dir: str,
                 num_classes: int,
                 batch_size: int,
-                num_epochs: int, ):
+                num_epochs: int,
+                mixing_proportion: float):
     """
+    :param mixing_proportion:
     :param model_path: Path to model directory
     :param image_dir: Path to image directory
     :param mask_dir: Path to mask directory
@@ -71,13 +77,23 @@ def train_model(model_path: str,
     :param num_epochs: Number of epochs
     :return:
     """
+
+    args = inspect.signature(train_model).parameters
+    arg_names = [param for param in args]
+    arg_values = []
+    for param in arg_names:
+        arg_values.append(locals()[param])
+
+    arg_n_values = zip(arg_names, arg_values)
+
     # Set dataloaders
     print('Creating dataloaders...')
     train_dataloader, val_dataloader, _ = \
         create_dataloaders(image_dir=image_dir,
                            mask_dir=mask_dir,
                            batch_size=batch_size,
-                           num_classes=num_classes)
+                           num_classes=num_classes,
+                           mixing_proportion=mixing_proportion)
 
     writer = SummaryWriter(logs_dir)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -109,6 +125,9 @@ def train_model(model_path: str,
     pbar_desc_train = tqdm(total=0, position=2, bar_format='{desc}')
     pbar_desc_val = tqdm(total=0, position=3, bar_format='{desc}')
     interrupt_message = tqdm(total=0, position=4, bar_format='{desc}')
+
+    train_loss_list = []
+    val_loss_list = []
 
     try:
         for epoch in pbar:
@@ -162,6 +181,9 @@ def train_model(model_path: str,
             val_loss = running_loss / len(val_dataloader)
             val_iou /= len(val_dataloader)
 
+            train_loss_list.append(float(train_loss))
+            val_loss_list.append(float(val_loss))
+
             # tqdm desc-string for val
             val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
 
@@ -177,14 +199,16 @@ def train_model(model_path: str,
 
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
-        make_report()
+
+        make_report(train_loss_list, val_loss_list, arg_n_values)
         writer.close()
         return model
 
-    except Exception:
+    except KeyboardInterrupt:
+        make_report(train_loss_list, val_loss_list, arg_n_values)
         interrupt_message.set_description_str('Training interrupted by user!', refresh=True)
         writer.close()
-        make_report()
+
         return model
 
 

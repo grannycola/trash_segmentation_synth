@@ -11,3 +11,4 @@ setuptools~=65.6.3
 torch~=1.13.1
 tensorboardX~=2.6
 pylatex~=1.4.1
+matplotlib~=3.7.2

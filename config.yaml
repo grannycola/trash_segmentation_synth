@@ -4,8 +4,8 @@ mask_dir: '../../data/processed/masks_5_classes/'
 logs_dir: '../../models/output/logs'
 batch_size: 64
 num_classes: 6
-num_epochs: 100
+num_epochs: 25
 num_workers: 6
 val_proportion: 0.1
 test_proportion: 0.1
-mixing_proportion: 0.5
+mixing_proportion: 0

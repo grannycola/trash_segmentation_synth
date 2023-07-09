@@ -83,7 +83,7 @@ def create_dataloaders(image_dir=None,
                        num_classes=None,
                        val_proportion=get_default_from_yaml('val_proportion'),
                        test_proportion=get_default_from_yaml('test_proportion'),
-                       mix_proportion=get_default_from_yaml('mixing_proportion'),
+                       mixing_proportion=get_default_from_yaml('mixing_proportion'),
                        transform=get_transform(), ):
 
     if val_proportion + test_proportion >= 1:
@@ -108,7 +108,7 @@ def create_dataloaders(image_dir=None,
                                       '../../data/synthetized_data/masks_5_classes/',
                                       transform=transform)
 
-    synthetized_size = int(mix_proportion * train_size)
+    synthetized_size = int(mixing_proportion * train_size)
     if synthetized_size > 0:
         mix_train_dataset, _ = random_split(synthetized_dataset,
                                             [synthetized_size,
