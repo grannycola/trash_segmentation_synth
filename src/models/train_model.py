@@ -128,6 +128,8 @@ def train_model(model_path: str,
 
     train_loss_list = []
     val_loss_list = []
+    train_metric_list = []
+    val_metric_list = []
 
     try:
         for epoch in pbar:
@@ -184,6 +186,9 @@ def train_model(model_path: str,
             train_loss_list.append(float(train_loss))
             val_loss_list.append(float(val_loss))
 
+            train_metric_list.append(float(train_iou))
+            val_metric_list.append(float(val_iou))
+
             # tqdm desc-string for val
             val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
 
@@ -200,12 +205,20 @@ def train_model(model_path: str,
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
 
-        make_report(train_loss_list, val_loss_list, arg_n_values)
+        make_report(train_loss_list,
+                    val_loss_list,
+                    train_metric_list,
+                    val_metric_list,
+                    arg_n_values)
         writer.close()
         return model
 
     except KeyboardInterrupt:
-        make_report(train_loss_list, val_loss_list, arg_n_values)
+        make_report(train_loss_list,
+                    val_loss_list,
+                    train_metric_list,
+                    val_metric_list,
+                    arg_n_values)
         interrupt_message.set_description_str('Training interrupted by user!', refresh=True)
         writer.close()
 
