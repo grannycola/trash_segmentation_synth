@@ -2,4 +2,5 @@
 * text=auto
 
 # .ipynb ignore in statistics
-notebooks/** linguist-vendored
+notebooks/* linguist-vendored
+*.ipynb linguist-vendored
