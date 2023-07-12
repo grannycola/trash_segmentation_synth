@@ -2,6 +2,8 @@ data/batch_*
 data/raw/images/
 models/output/logs/
 *.pdf
+reports/
+mlruns/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
