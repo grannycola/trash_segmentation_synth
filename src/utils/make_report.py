@@ -1,6 +1,7 @@
 from pylatex import Document, Section, Subsection, Tabular, Figure
 from datetime import datetime
 from matplotlib import pyplot as plt
+import os
 
 plt.switch_backend('TkAgg')
 
@@ -53,5 +54,5 @@ def make_report(train_loss_list,
     with doc.create(Subsection('Graph: ')):
         with doc.create(Figure(position='h!')) as graph_image:
             graph_image.add_image('plot.png')
-
+            os.remove(plot_image_path)
     doc.generate_pdf('../../reports/report_' + current_time)

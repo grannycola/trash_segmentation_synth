@@ -9,9 +9,6 @@ from torch.utils.data import Dataset, DataLoader, random_split, ConcatDataset
 from albumentations.pytorch import ToTensorV2
 
 torch.manual_seed(42)
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
 
 
 def get_default_from_yaml(param_name):

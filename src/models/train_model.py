@@ -1,20 +1,16 @@
 import torch
 import click
 import os
-import sys
 import yaml
 import inspect
+import mlflow
 
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from checkpoint import ModelCheckpoint
 from metrics import IoU
 from custom_dataset import create_dataloaders
-from tensorboardX import SummaryWriter
 from src.utils.make_report import make_report
-
-src_path = os.path.join(os.getcwd(), 'src')
-sys.path.append(src_path)
 
 
 def get_default_from_yaml(param_name):
@@ -26,7 +22,7 @@ def get_default_from_yaml(param_name):
 
 
 @click.command()
-@click.option('--model_path', default=get_default_from_yaml('model_path'), type=click.Path())
+@click.option('--model_path', default=None, type=click.Path())
 @click.option('--image_dir', default=get_default_from_yaml('image_dir'), type=click.Path(exists=True))
 @click.option('--mask_dir', default=get_default_from_yaml('mask_dir'), type=click.Path(exists=True))
 @click.option('--logs_dir', default=get_default_from_yaml('logs_dir'), type=click.Path())
@@ -78,6 +74,10 @@ def train_model(model_path: str,
     :return:
     """
 
+    params = locals()
+    mlflow.start_run()
+    mlflow.log_params(params)
+
     args = inspect.signature(train_model).parameters
     arg_names = [param for param in args]
     arg_values = []
@@ -95,21 +95,22 @@ def train_model(model_path: str,
                            num_classes=num_classes,
                            mixing_proportion=mixing_proportion)
 
-    writer = SummaryWriter(logs_dir)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model_type(num_classes=num_classes)
     model = model.to(device)
 
-    checkpoint = ModelCheckpoint(model, model_path)
-    if os.path.exists(model_path):
-        state = torch.load(model_path, map_location=device)
-        model.load_state_dict(state['model'])
-        print('Model has been loaded!')
+    checkpoint = None
+    if model_path:
+        checkpoint = ModelCheckpoint(model, model_path)
+        if os.path.exists(model_path):
+            state = torch.load(model_path, map_location=device)
+            model.load_state_dict(state['model'])
+            print('Model has been loaded!')
 
-        checkpoint = ModelCheckpoint(model,
-                                     model_path,
-                                     state['best_loss'],
-                                     state['best_metric'],)
+            checkpoint = ModelCheckpoint(model,
+                                         model_path,
+                                         state['best_loss'],
+                                         state['best_metric'],)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -189,6 +190,11 @@ def train_model(model_path: str,
             train_metric_list.append(float(train_iou))
             val_metric_list.append(float(val_iou))
 
+            mlflow.log_metric("Train Loss", train_loss)
+            mlflow.log_metric("Val loss", val_loss)
+            mlflow.log_metric("Train IoU", train_iou)
+            mlflow.log_metric("Val IoU", val_iou)
+
             # tqdm desc-string for val
             val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
 
@@ -196,21 +202,22 @@ def train_model(model_path: str,
             pbar_desc_train.set_description_str(train_desc_str, refresh=True)
             pbar_desc_val.set_description_str(val_desc_str, refresh=True)
 
-            writer.add_scalar('Loss/Train', train_loss, epoch)
-            writer.add_scalar('Loss/Val', val_loss, epoch)
-
-            writer.add_scalar('IoU/Train', train_iou, epoch)
-            writer.add_scalar('IoU/Val', val_iou, epoch)
-
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
+
+        mlflow.log_metric("Best Train Loss", min(train_loss_list))
+        mlflow.log_metric("Best Val loss", min(val_loss_list))
+        mlflow.log_metric("Best Train IoU", max(train_metric_list))
+        mlflow.log_metric("Best Val IoU", max(val_metric_list))
 
         make_report(train_loss_list,
                     val_loss_list,
                     train_metric_list,
                     val_metric_list,
                     arg_n_values)
-        writer.close()
+
+        mlflow.pytorch.log_model(model, "model")
+        mlflow.end_run()
         return model
 
     except KeyboardInterrupt:
@@ -219,9 +226,10 @@ def train_model(model_path: str,
                     train_metric_list,
                     val_metric_list,
                     arg_n_values)
-        interrupt_message.set_description_str('Training interrupted by user!', refresh=True)
-        writer.close()
-
+        interrupt_message.set_description_str('Training interrupted by user!',
+                                              refresh=True)
+        mlflow.pytorch.log_model(model, "model")
+        mlflow.end_run()
         return model
 
 
