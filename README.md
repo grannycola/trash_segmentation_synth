@@ -1,6 +1,6 @@
 # trash_segmentation_synth
 This is my garbage segmentation project. In this work, I used 5 supercategories from [TACO Dataset](http://tacodataset.org/). There are 1093 images in the dataset. Split into train/val/test - 80/10/10. 
-To train the model, you can use the ```python src/models/train_model.py``` file in the console using the CLI. The default settings for model training are specified in the config.yaml file. To test the model, use the file ```python src/models/eval_model.py```. Baseline model deeplabv3_mobilenet_v3_large from Torchvision with IoU: ~0.27.
+To train the model, you can use the ```python src/models/train_model.py``` file in the console using the CLI. The default settings for model training are specified in the config.yaml file. To test the model, use the file ```python src/models/eval_model.py```. Baseline model deeplabv3_mobilenet_v3_large from Torchvision with IoU: ~0.27. When mixing data (with mixing_proportion 0.25-0.5), the quality increases to ~0.33 IoU.
 
 # Classes
 
