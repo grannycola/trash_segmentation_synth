@@ -1,9 +1,8 @@
 from pylatex import Document, Section, Subsection, Tabular, Figure
 from datetime import datetime
 from matplotlib import pyplot as plt
-import os
 
-plt.switch_backend('TkAgg')
+plt.switch_backend('Agg')
 
 
 def make_report(train_loss_list,
