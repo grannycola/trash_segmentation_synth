@@ -19,16 +19,38 @@ To train the model, you can use the ```python src/models/train_model.py``` file 
 ![CM](https://github.com/grannycola/trash_segmentation_synth/assets/54438026/b2a27b05-61f1-423d-b1c4-d97fe853094b)
 
 
-# Requirements
-- torchmetrics~=0.11.4
-- click~=8.1.3
-- pyyaml~=6.0
-- torchvision~=0.14.1
-- tqdm~=4.65.0
-- numpy~=1.23.5
-- albumentations~=1.3.0
-- pillow~=9.4.0
-- scikit-learn~=1.2.1
-- setuptools~=65.6.3
-- torch~=1.13.1
-- tensorboardX~=2.6
+# Dockerfile
+
+Required:
+- Nvidia GPU
+- Nvidia Driver.
+- Cuda 12.0.0
+- nvidia-container-runtime
+
+Check file content ```/etc/docker/daemon.json```
+It should look like:
+```
+{
+  "runtimes": {
+    "nvidia": {
+      "path": "/usr/bin/nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  },
+  "default-runtime": "nvidia"
+}
+```
+Build image:
+```
+sudo docker build -t trash_segmentation .
+```
+Run container:
+```
+sudo docker run --gpus all -it -v $PWD:/app trash_segmentation
+```
+Run training:
+
+```
+make train
+```
+Tested on Nvidia RTX 3090Ti with Cuda driver 12.0.0
