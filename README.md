@@ -46,7 +46,7 @@ sudo docker build -t trash_segmentation .
 ```
 Run container:
 ```
-sudo docker run -p 5000:5000 -e MLFLOW_TRACKING_URI=http://<host_ip>:5000 --memory=16g --gpus all -it -v $PWD:/app segmentation_project
+sudo docker run -p 5000:5000 --memory=16g --gpus all -it -v $PWD:/app segmentation_project
 # Change <host_ip> to your own 
 ```
 Run training:
