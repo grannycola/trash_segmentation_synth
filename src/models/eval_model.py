@@ -8,14 +8,10 @@ from custom_dataset import create_dataloaders
 from metrics import IoU
 
 
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
-
-
 def get_default_from_yaml(param_name):
     with open('../../config.yaml', 'r') as f:
         config = yaml.safe_load(f)
+
     default_value = config.get(param_name, 0)
     return default_value
 

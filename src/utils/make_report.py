@@ -2,14 +2,13 @@ from pylatex import Document, Section, Subsection, Tabular, Figure
 from datetime import datetime
 from matplotlib import pyplot as plt
 
-plt.switch_backend('Agg')
-
 
 def make_report(train_loss_list,
                 val_loss_list,
                 train_metric_list,
                 val_metric_list,
                 arg_n_values):
+    plt.switch_backend('Agg')
     geometry_options = {"tmargin": "1cm", "lmargin": "1cm"}
     doc = Document(geometry_options=geometry_options)
 
