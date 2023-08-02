@@ -5,6 +5,7 @@ import yaml
 import inspect
 import mlflow
 
+from typing import Optional, Tuple, Dict, Any
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 from checkpoint import ModelCheckpoint
@@ -13,29 +14,29 @@ from custom_dataset import create_dataloaders
 from src.utils.make_report import make_report
 
 
-def get_default_from_yaml(param_name):
-    with open('../../config.yaml', 'r') as f:
+def load_config(config_path: str) -> Dict[str, Any]:
+    with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
+    return config
 
-    default_value = config.get(param_name, 0)
-    return default_value
+
+def get_default_from_config(config: Dict[str, Any], param_name: str) -> Any:
+    return config.get(param_name, 0)
+
+
+config_path = '../../config.yaml'
+config_params = load_config(config_path)
 
 
 @click.command()
-@click.option('--model_path', default=None, type=click.Path())
-@click.option('--image_dir', default=get_default_from_yaml('image_dir'), type=click.Path(exists=True))
-@click.option('--mask_dir', default=get_default_from_yaml('mask_dir'), type=click.Path(exists=True))
-@click.option('--logs_dir', default=get_default_from_yaml('logs_dir'), type=click.Path())
-@click.option('--batch_size', default=get_default_from_yaml('batch_size'), help='Batch size', type=click.INT)
-@click.option('--num_classes',
-              default=get_default_from_yaml('num_classes'),
-              help='Number of classes including background class',
-              type=click.INT)
-@click.option('--num_epochs',
-              default=get_default_from_yaml('num_epochs'),
-              help='Number of epochs for training',
-              type=click.INT)
-@click.option('--mixing_proportion', default=get_default_from_yaml('mixing_proportion'), type=click.FLOAT)
+@click.option('--model_path', default=get_default_from_config(config_params, 'model_path'), type=click.Path())
+@click.option('--image_dir', default=get_default_from_config(config_params, 'image_dir'), type=click.Path(exists=True))
+@click.option('--mask_dir', default=get_default_from_config(config_params, 'mask_dir'), type=click.Path(exists=True))
+@click.option('--logs_dir', default=get_default_from_config(config_params, 'logs_dir'), type=click.Path())
+@click.option('--batch_size', default=get_default_from_config(config_params, 'batch_size'), help='Batch size', type=click.INT)
+@click.option('--num_classes', default=get_default_from_config(config_params, 'num_classes'), help='Number of classes including background class', type=click.INT)
+@click.option('--num_epochs', default=get_default_from_config(config_params, 'num_epochs'), help='Number of epochs for training', type=click.INT)
+@click.option('--mixing_proportion', default=get_default_from_config(config_params, 'mixing_proportion'), type=click.FLOAT)
 def get_cli_params_for_training(model_path,
                                 image_dir,
                                 mask_dir,
@@ -52,6 +53,25 @@ def get_cli_params_for_training(model_path,
                 batch_size,
                 num_epochs,
                 mixing_proportion)
+
+
+def run_iteration(images: torch.Tensor,
+                  masks: torch.Tensor,
+                  model: torch.nn.Module,
+                  loss_fn: torch.nn.Module,
+                  device: torch.device,
+                  optimizer: Optional[torch.optim.Optimizer] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+
+    outputs = model(images)['out']
+    preds = torch.argmax(outputs, dim=1)
+    loss_value = loss_fn(outputs, masks.squeeze(1).long())
+
+    if optimizer:
+        optimizer.zero_grad()
+        loss_value.backward()
+        optimizer.step()
+
+    return loss_value, preds
 
 
 def train_model(model_path: str,
@@ -118,14 +138,6 @@ def train_model(model_path: str,
 
     print('Training model...')
     # custom verbose
-    pbar = tqdm(range(num_epochs),
-                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
-    pbar_batches = tqdm(total=len(train_dataloader), position=1,
-                        bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
-
-    pbar_desc_train = tqdm(total=0, position=2, bar_format='{desc}')
-    pbar_desc_val = tqdm(total=0, position=3, bar_format='{desc}')
-    interrupt_message = tqdm(total=0, position=4, bar_format='{desc}')
 
     train_loss_list = []
     val_loss_list = []
@@ -133,36 +145,29 @@ def train_model(model_path: str,
     val_metric_list = []
 
     try:
-        for epoch in pbar:
+        pbar_epochs = tqdm(range(num_epochs), desc="Epochs", ncols=150)
+        for epoch in pbar_epochs:
             model.train()
             running_loss = 0.
             train_iou = 0.
 
-            pbar_batches.reset()
-
-            # Training on one epoch
-            for i, (images, masks) in enumerate(train_dataloader):
+            pbar_batches = tqdm(train_dataloader, desc="Training", leave=False, ncols=150)
+            for images, masks in pbar_batches:
                 images = images.to(device)
                 masks = masks.to(device)
 
-                pbar_batches.update(1)
-
-                optimizer.zero_grad()
-                outputs = model(images)['out']
-                preds = torch.argmax(outputs, dim=1)
-
-                train_iou += IoU(preds, masks, num_classes)
-                loss_value = loss(outputs, masks.squeeze(1).long())
-                loss_value.backward()
-
-                optimizer.step()
+                loss_value, preds = run_iteration(images, masks, model, loss, device, optimizer)
                 running_loss += loss_value
+                train_iou += IoU(preds, masks, num_classes)
+
+                # tqdm desc-string for train
+                train_desc_str = (f'Train values - Loss: {round(float(running_loss / len(train_dataloader)), 2)} '
+                                  f'IoU: {round(float(train_iou / len(train_dataloader)), 2)}')
+
+                pbar_batches.set_postfix_str(train_desc_str)
 
             train_loss = running_loss / len(train_dataloader)
             train_iou /= len(train_dataloader)
-
-            # tqdm desc-string for train
-            train_desc_str = f'Train values - Loss: {round(float(train_loss), 2)} IoU: {round(float(train_iou), 2)}'
 
             # Validation on one epoch
             model.eval()
@@ -173,42 +178,44 @@ def train_model(model_path: str,
                 for images, masks in val_dataloader:
                     images = images.to(device)
                     masks = masks.to(device)
-
-                    outputs = model(images)['out']
-                    preds = torch.argmax(outputs, dim=1)
-                    loss_value = loss(outputs, masks.squeeze(1).long())
-
+                    loss_value, preds = run_iteration(images, masks, model, loss, device)
                     running_loss += loss_value
                     val_iou += IoU(preds, masks, num_classes)
 
             val_loss = running_loss / len(val_dataloader)
             val_iou /= len(val_dataloader)
 
+            # tqdm desc-string for val
+            val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
+            pbar_epochs.set_postfix_str(val_desc_str)
+
             train_loss_list.append(float(train_loss))
             val_loss_list.append(float(val_loss))
-
             train_metric_list.append(float(train_iou))
             val_metric_list.append(float(val_iou))
 
-            mlflow.log_metric("Train Loss", train_loss)
-            mlflow.log_metric("Val loss", val_loss)
-            mlflow.log_metric("Train IoU", train_iou)
-            mlflow.log_metric("Val IoU", val_iou)
+            metrics = {
+                "Train Loss": train_loss,
+                "Val Loss": val_loss,
+                "Train IoU": train_iou,
+                "Val IoU": val_iou
+            }
 
-            # tqdm desc-string for val
-            val_desc_str = f'Val values - Loss: {round(float(val_loss), 2)} IoU: {round(float(val_iou), 2)}'
-
-            # Set value then clear strings
-            pbar_desc_train.set_description_str(train_desc_str, refresh=True)
-            pbar_desc_val.set_description_str(val_desc_str, refresh=True)
+            for metric_name, metric_value in metrics.items():
+                mlflow.log_metric(metric_name, metric_value)
 
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
 
-        mlflow.log_metric("Best Train Loss", min(train_loss_list))
-        mlflow.log_metric("Best Val loss", min(val_loss_list))
-        mlflow.log_metric("Best Train IoU", max(train_metric_list))
-        mlflow.log_metric("Best Val IoU", max(val_metric_list))
+        best_metrics_to_log = {
+            "Best Train Loss": min(train_loss_list),
+            "Best Val Loss": min(val_loss_list),
+            "Best Train IoU": max(train_metric_list),
+            "Best Val IoU": max(val_metric_list)
+        }
+
+        for metric_name, metric_value in best_metrics_to_log.items():
+            mlflow.log_metric(metric_name, metric_value)
 
         make_report(train_loss_list,
                     val_loss_list,
@@ -226,8 +233,7 @@ def train_model(model_path: str,
                     train_metric_list,
                     val_metric_list,
                     arg_n_values)
-        interrupt_message.set_description_str('Training interrupted by user!',
-                                              refresh=True)
+
         mlflow.pytorch.log_model(model, "model")
         mlflow.end_run()
         return model
