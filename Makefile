@@ -2,7 +2,7 @@ install:
 	pip install -r requirements.txt;
 
 train:
-	cd src/models && python3 train_model.py;
+	cd src/models && python3 train_model.py $(ARGS);
 
 eval:
 	cd src/models && python3 eval_model.py $(ARGS);
