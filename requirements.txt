@@ -9,4 +9,4 @@ pillow~=9.4.0
 torch~=1.13.1
 pylatex~=1.4.1
 matplotlib~=3.7.2
-mlflow~=2.4.2
+mlflow>=2.6.0
