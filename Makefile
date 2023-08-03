@@ -2,10 +2,10 @@ install:
 	pip install -r requirements.txt;
 
 train:
-	cd src/models && python3 train_model.py $(ARGS);
+	cd src/cli && python3 train_cli_commands.py $(ARGS);
 
 eval:
 	cd src/models && python3 eval_model.py $(ARGS);
 
 mlflow:
-	mlflow ui --backend-store-uri src/models/mlruns;
+	mlflow ui --backend-store-uri reports/mlruns;

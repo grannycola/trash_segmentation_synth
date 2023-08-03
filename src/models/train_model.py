@@ -1,65 +1,23 @@
 import torch
-import click
 import os
-import yaml
 import inspect
 import mlflow
 
-from typing import Optional, Tuple, Dict, Any
+from functools import wraps
+from typing import Optional, Tuple
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
-from checkpoint import ModelCheckpoint
-from metrics import IoU
-from custom_dataset import create_dataloaders
+
+from src.models.checkpoint import ModelCheckpoint
+from src.models.metrics import IoU
+from src.models.custom_dataset import create_dataloaders
 from src.utils.make_report import make_report
-
-
-def load_config(config_path: str) -> Dict[str, Any]:
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    return config
-
-
-def get_default_from_config(config: Dict[str, Any], param_name: str) -> Any:
-    return config.get(param_name, 0)
-
-
-config_path = '../../config.yaml'
-config_params = load_config(config_path)
-
-
-@click.command()
-@click.option('--model_path', default=get_default_from_config(config_params, 'model_path'), type=click.Path())
-@click.option('--image_dir', default=get_default_from_config(config_params, 'image_dir'), type=click.Path(exists=True))
-@click.option('--mask_dir', default=get_default_from_config(config_params, 'mask_dir'), type=click.Path(exists=True))
-@click.option('--logs_dir', default=get_default_from_config(config_params, 'logs_dir'), type=click.Path())
-@click.option('--batch_size', default=get_default_from_config(config_params, 'batch_size'), help='Batch size', type=click.INT)
-@click.option('--num_classes', default=get_default_from_config(config_params, 'num_classes'), help='Number of classes including background class', type=click.INT)
-@click.option('--num_epochs', default=get_default_from_config(config_params, 'num_epochs'), help='Number of epochs for training', type=click.INT)
-@click.option('--mixing_proportion', default=get_default_from_config(config_params, 'mixing_proportion'), type=click.FLOAT)
-def get_cli_params_for_training(model_path,
-                                image_dir,
-                                mask_dir,
-                                logs_dir,
-                                batch_size,
-                                num_classes,
-                                num_epochs,
-                                mixing_proportion):
-    train_model(model_path,
-                image_dir,
-                mask_dir,
-                logs_dir,
-                num_classes,
-                batch_size,
-                num_epochs,
-                mixing_proportion)
 
 
 def run_iteration(images: torch.Tensor,
                   masks: torch.Tensor,
                   model: torch.nn.Module,
                   loss_fn: torch.nn.Module,
-                  device: torch.device,
                   optimizer: Optional[torch.optim.Optimizer] = None) -> Tuple[torch.Tensor, torch.Tensor]:
 
     outputs = model(images)['out']
@@ -82,19 +40,9 @@ def train_model(model_path: str,
                 batch_size: int,
                 num_epochs: int,
                 mixing_proportion: float):
-    """
-    :param mixing_proportion:
-    :param model_path: Path to model directory
-    :param image_dir: Path to image directory
-    :param mask_dir: Path to mask directory
-    :param logs_dir: Path to logs directory
-    :param num_classes: Number of classes
-    :param batch_size: Batch size
-    :param num_epochs: Number of epochs
-    :return:
-    """
-
     params = locals()
+
+    mlflow.set_tracking_uri('../../reports/mlruns/')
     mlflow.start_run()
     mlflow.log_params(params)
 
@@ -156,7 +104,7 @@ def train_model(model_path: str,
                 images = images.to(device)
                 masks = masks.to(device)
 
-                loss_value, preds = run_iteration(images, masks, model, loss, device, optimizer)
+                loss_value, preds = run_iteration(images, masks, model, loss, optimizer)
                 running_loss += loss_value
                 train_iou += IoU(preds, masks, num_classes)
 
@@ -178,7 +126,7 @@ def train_model(model_path: str,
                 for images, masks in val_dataloader:
                     images = images.to(device)
                     masks = masks.to(device)
-                    loss_value, preds = run_iteration(images, masks, model, loss, device)
+                    loss_value, preds = run_iteration(images, masks, model, loss)
                     running_loss += loss_value
                     val_iou += IoU(preds, masks, num_classes)
 
@@ -207,6 +155,15 @@ def train_model(model_path: str,
             if checkpoint:
                 checkpoint(epoch, val_loss, val_iou)
 
+    except KeyboardInterrupt:
+        print('Training stopped by user!')
+    finally:
+        make_report(train_loss_list,
+                    val_loss_list,
+                    train_metric_list,
+                    val_metric_list,
+                    arg_n_values)
+
         best_metrics_to_log = {
             "Best Train Loss": min(train_loss_list),
             "Best Val Loss": min(val_loss_list),
@@ -217,27 +174,7 @@ def train_model(model_path: str,
         for metric_name, metric_value in best_metrics_to_log.items():
             mlflow.log_metric(metric_name, metric_value)
 
-        make_report(train_loss_list,
-                    val_loss_list,
-                    train_metric_list,
-                    val_metric_list,
-                    arg_n_values)
-
         mlflow.pytorch.log_model(model, "model")
         mlflow.end_run()
+        print('End of training!')
         return model
-
-    except KeyboardInterrupt:
-        make_report(train_loss_list,
-                    val_loss_list,
-                    train_metric_list,
-                    val_metric_list,
-                    arg_n_values)
-
-        mlflow.pytorch.log_model(model, "model")
-        mlflow.end_run()
-        return model
-
-
-if __name__ == '__main__':
-    get_cli_params_for_training()
