@@ -26,6 +26,8 @@ Required:
 - Installed Nvidia Driver.
 - Cuda 12.0.0
 - Installed nvidia-container-runtime (see https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+  
+At first set ```num_workers: 0``` in ```config.yaml```
 
 Check file content ```/etc/docker/daemon.json```
 It should look like:
