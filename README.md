@@ -48,7 +48,7 @@ Run dockerd:
 sudo dockerd
 ```
 
-Make shure that "nvidia" is in "Runtimes" list:
+Make sure that "nvidia" is in "Runtimes" list:
 ```
 $ docker info|grep -i runtime
  Runtimes: nvidia runc
