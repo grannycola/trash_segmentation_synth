@@ -61,6 +61,10 @@ Run container:
 ```
 sudo docker run --memory=16g --gpus all -it -v $PWD:/app trash_segmentation
 ```
+Install project as package:
+```
+pip install .
+```
 Run training:
 ```
 make train
