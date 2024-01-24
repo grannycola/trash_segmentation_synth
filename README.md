@@ -23,9 +23,9 @@ To train the model, you can use the ```python src/models/train_model.py``` file 
 
 Required:
 - Nvidia GPU
-- Nvidia Driver.
+- Installed Nvidia Driver.
 - Cuda 12.0.0
-- nvidia-container-runtime
+- Installed nvidia-container-runtime (see https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 
 Check file content ```/etc/docker/daemon.json```
 It should look like:
