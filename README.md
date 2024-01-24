@@ -59,7 +59,7 @@ sudo docker build -t trash_segmentation .
 ```
 Run container:
 ```
-sudo docker run --memory=16g --gpus all -it -v $PWD:/app segmentation_project
+sudo docker run --memory=16g --gpus all -it -v $PWD:/app trash_segmentation
 ```
 Run training:
 ```
