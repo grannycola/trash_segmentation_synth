@@ -40,6 +40,19 @@ It should look like:
   "default-runtime": "nvidia"
 }
 ```
+
+Run dockerd:
+```
+sudo dockerd
+```
+
+Make shure that "nvidia" is in "Runtimes" list:
+```
+$ docker info|grep -i runtime
+ Runtimes: nvidia runc
+ Default Runtime: runc
+```
+
 Build image:
 ```
 sudo docker build -t trash_segmentation .
