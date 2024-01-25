@@ -1,0 +1,7 @@
+data/
+build/
+src.egg-info/
+Dockerfile
+.gitignore
+.git
+**/mlruns/
