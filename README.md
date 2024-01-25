@@ -61,11 +61,7 @@ sudo docker build -t trash_segmentation .
 ```
 Run container:
 ```
-sudo docker run --memory=16g --gpus all -it trash_segmentation
-```
-Install project as package:
-```
-pip install .
+sudo docker run --memory=16g --gpus all -it -v $PWD/data:/app/data gaofen_segmentation
 ```
 Run training:
 ```
