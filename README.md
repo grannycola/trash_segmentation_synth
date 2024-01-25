@@ -43,7 +43,7 @@ It should look like:
 }
 ```
 
-Run dockerd:
+Run dockerd (if it's not running):
 ```
 sudo dockerd
 ```
@@ -57,7 +57,7 @@ $ docker info|grep -i runtime
 
 Build image:
 ```
-sudo docker build -t trash_segmentation .
+sudo docker build --no-cache -t trash_segmentation .
 ```
 Run container:
 ```
