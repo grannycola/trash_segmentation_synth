@@ -5,7 +5,7 @@ logs_dir: '../../models/output/logs'
 batch_size: 64
 num_classes: 6
 num_epochs: 25
-num_workers: 24 # set 0 for Docker
+num_workers: 0 # set 0 for Docker
 val_proportion: 0.1
 test_proportion: 0.1
 mixing_proportion: 0

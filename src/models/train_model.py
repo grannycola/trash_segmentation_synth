@@ -10,7 +10,6 @@ from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_t
 from src.models.checkpoint import ModelCheckpoint
 from src.models.metrics import IoU
 from src.models.custom_dataset import create_dataloaders
-from src.utils.make_report import make_report
 
 
 def run_iteration(images: torch.Tensor,
@@ -156,24 +155,3 @@ def train_model(model_path: str,
 
     except KeyboardInterrupt:
         print('Training stopped by user!')
-    finally:
-        make_report(train_loss_list,
-                    val_loss_list,
-                    train_metric_list,
-                    val_metric_list,
-                    arg_n_values)
-
-        best_metrics_to_log = {
-            "Best Train Loss": min(train_loss_list),
-            "Best Val Loss": min(val_loss_list),
-            "Best Train IoU": max(train_metric_list),
-            "Best Val IoU": max(val_metric_list)
-        }
-
-        for metric_name, metric_value in best_metrics_to_log.items():
-            mlflow.log_metric(metric_name, metric_value)
-
-        mlflow.pytorch.log_model(model, "model")
-        mlflow.end_run()
-        print('End of training!')
-        return model
