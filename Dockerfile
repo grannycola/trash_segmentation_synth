@@ -21,4 +21,5 @@ RUN python3 -m pip install --upgrade pip
 
 WORKDIR /app
 COPY . /app
-RUN pip install . ;
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install .
