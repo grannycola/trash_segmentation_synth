@@ -7,7 +7,6 @@ from typing import Optional, Tuple
 from tqdm import tqdm
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as model_type
 
-from src.models.checkpoint import ModelCheckpoint
 from src.models.metrics import IoU
 from src.models.custom_dataset import create_dataloaders
 
@@ -64,19 +63,6 @@ def train_model(model_path: str,
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model_type(num_classes=num_classes)
     model = model.to(device)
-
-    checkpoint = None
-    if model_path:
-        checkpoint = ModelCheckpoint(model, model_path)
-        if os.path.exists(model_path):
-            state = torch.load(model_path, map_location=device)
-            model.load_state_dict(state['model'])
-            print('Model has been loaded!')
-
-            checkpoint = ModelCheckpoint(model,
-                                         model_path,
-                                         state['best_loss'],
-                                         state['best_metric'],)
 
     # Optimizer and loss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -149,9 +135,6 @@ def train_model(model_path: str,
 
             for metric_name, metric_value in metrics.items():
                 mlflow.log_metric(metric_name, metric_value)
-
-            if checkpoint:
-                checkpoint(epoch, val_loss, val_iou)
 
     except KeyboardInterrupt:
         print('Training stopped by user!')
