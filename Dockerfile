@@ -23,5 +23,8 @@ WORKDIR /app
 COPY . /app
 
 RUN sed -i 's/num_workers: [0-9]*/num_workers: 0/' config.yaml
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
+
+EXPOSE 5000
+
 RUN pip install .
