@@ -61,7 +61,7 @@ sudo docker build --no-cache -t trash_segmentation .
 ```
 Run container:
 ```
-sudo docker run --memory=16g --gpus all -it -v $PWD/data:/app/data trash_segmentation
+sudo docker run --name=trash_segmentation -p 5000:5000 --memory=16g --gpus all -it -v $PWD/data:/app/data trash_segmentation
 ```
 Run training:
 ```
