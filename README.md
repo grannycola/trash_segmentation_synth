@@ -61,7 +61,7 @@ sudo docker build --no-cache -t trash_segmentation .
 ```
 Run container:
 ```
-sudo docker run --memory=16g --gpus all -it -v $PWD/data:/app/data gaofen_segmentation
+sudo docker run --memory=16g --gpus all -it -v $PWD/data:/app/data trash_segmentation
 ```
 Run training:
 ```
