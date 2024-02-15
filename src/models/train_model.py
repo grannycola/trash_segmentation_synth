@@ -39,7 +39,7 @@ def train_model(model_path: str,
                 mixing_proportion: float):
     params = locals()
 
-    mlflow.set_tracking_uri('../../reports/mlruns/')
+    mlflow.set_tracking_uri('../../models/mlruns/')
     mlflow.start_run()
     mlflow.log_params(params)
 
